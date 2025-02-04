@@ -1,0 +1,20 @@
+{{- if .Capabilities.APIVersions.Has "chaos-mesh.org/v1alpha1/Schedule" }}
+apiVersion: chaos-mesh.org/v1alpha1
+kind: Schedule
+metadata:
+  name: schedule-strimzioperator-service-pod-kill
+spec:
+  schedule: '57 * * * *'
+  startingDeadlineSeconds: 29
+  historyLimit: 2
+  concurrencyPolicy: 'Allow'
+  type: PodChaos
+  podChaos:
+    action: pod-kill
+    mode: one
+    selector:
+      namespaces:
+        - {{ .Release.Namespace | quote }}
+      labelSelectors:
+         name: strimzi-cluster-operator
+{{ end }}

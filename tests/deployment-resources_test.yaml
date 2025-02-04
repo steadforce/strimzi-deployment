@@ -1,0 +1,52 @@
+suite: test if the resource settings for strimzi container are correct
+templates:
+- charts/strimzi-kafka-operator/templates/060-Deployment-strimzi-cluster-operator.yaml
+tests:
+- it: strimzi-operator container resources for local full cluster
+  values:
+  - ../values-subchart-overrides.yaml
+  - ../values-local.yaml
+  asserts:
+  - matchRegex:
+      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.limits.cpu
+      # on local cluster we expect 0 or 0m cpu limits
+      pattern: "^0.*"
+  - matchRegex:
+      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.limits.memory
+      # on local cluster we expect non 0 memory limits
+      pattern: "^[1-9].*"
+  - matchRegex:
+      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.requests.cpu
+      # on local cluster we expect 0 or 0m cpu requests
+      pattern: "^0.*"
+  - matchRegex:
+      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.requests.memory
+      # on local cluster we expect 0 or 0Mi 0Gi memory requests
+      pattern: "^0.*"
+  - matchSnapshot: {}
+
+- it: strimzi-operator container resources for full cluster
+  values:
+  - ../values-subchart-overrides.yaml
+  asserts:
+  - matchRegex:
+      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.limits.cpu
+      # on non-local cluster we expect non 0 cpu limits
+      pattern: "^[1-9].*"
+  - matchRegex:
+      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.limits.memory
+      # on non-local cluster we expect non 0 memory limits
+      pattern: "^[1-9].*"
+  - notEqual:
+      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.limits.memory
+      # expect that the memory limit value from the subchart has been overridden
+      value: "384Mi"
+  - matchRegex:
+      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.requests.cpu
+      # on non-local cluster we expect non 0 cpu requests
+      pattern: "^[1-9].*"
+  - matchRegex:
+      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.requests.memory
+      # on non-local cluster we expect non 0 memory requests
+      pattern: "^[1-9].*"
+  - matchSnapshot: {}

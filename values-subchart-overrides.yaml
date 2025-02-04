@@ -1,0 +1,9 @@
+strimzi-kafka-operator:
+  replicas: 3
+  resources:
+    limits:
+      memory: 1024Mi
+    requests:
+      cpu: 120m
+      memory: 640Mi
+  watchAnyNamespace: true

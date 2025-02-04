@@ -1,0 +1,14 @@
+suite: test if the deployment still uses the same selector labels, we use them in the chaos-mesh schedule
+templates:
+- charts/strimzi-kafka-operator/templates/060-Deployment-strimzi-cluster-operator.yaml
+tests:
+- it: deployment still uses the same selector labels
+  values:
+  - ../values-subchart-overrides.yaml
+  asserts:
+  - equal:
+      path: spec.selector.matchLabels
+      value:
+        name: strimzi-cluster-operator
+        strimzi.io/kind: cluster-operator
+  - matchSnapshot: {}

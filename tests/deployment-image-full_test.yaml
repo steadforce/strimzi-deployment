@@ -1,0 +1,23 @@
+suite: test if the strimzi-operator image used in full clusters is correct
+templates:
+- charts/strimzi-kafka-operator/templates/060-Deployment-strimzi-cluster-operator.yaml
+tests:
+
+- it: strimzi-operator image for local full cluster
+  values:
+  - ../values-subchart-overrides.yaml
+  - ../values-local.yaml
+  asserts:
+  - matchRegex:
+      path: &strimziOperatorImagePath spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].image
+      pattern: "^quay.io/strimzi/operator:"
+  - matchSnapshot: {}
+
+- it: strimzi-operator image for full cluster
+  values:
+    - ../values-subchart-overrides.yaml
+  asserts:
+    - matchRegex:
+        path: *strimziOperatorImagePath
+        pattern: "^quay.io/strimzi/operator:"
+    - matchSnapshot: {}

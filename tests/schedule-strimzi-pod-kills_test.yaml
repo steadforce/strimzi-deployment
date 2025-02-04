@@ -1,0 +1,24 @@
+suite: test if the schedule pod kills policy is generated correctly
+templates:
+- templates/schedule-pod-kills.yaml
+values:
+- ../values-subchart-overrides.yaml
+tests:
+- it: pod kill schedule is generated for strimzi operator when api is available
+  asserts:
+  - containsDocument:
+      apiVersion: chaos-mesh.org/v1alpha1
+      kind: Schedule
+      name: schedule-strimzioperator-service-pod-kill
+  - matchSnapshot: {}
+  capabilities:
+    apiVersions:
+    - chaos-mesh.org/v1alpha1/Schedule
+- it: pod kill schedule is not generated for strimzi operator when api is unavailable
+  asserts:
+  - containsDocument:
+      apiVersion: chaos-mesh.org/v1alpha1
+      kind: Schedule
+      name: schedule-strimzioperator-service-pod-kill
+    not: true
+  - matchSnapshot: {}
