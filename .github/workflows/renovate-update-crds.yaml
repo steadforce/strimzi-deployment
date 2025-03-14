@@ -1,0 +1,34 @@
+name: Helm update CRDs CI
+
+on:
+  push:
+    branches:
+      - renovate/*
+permissions:
+  contents: write
+
+jobs:
+  update-crds:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Helm
+        uses: azure/setup-helm@v4.3.0
+        with:
+          version: v3.16.3
+      - name: Update CRDs
+        run: ./update-crds.sh
+      - name: Commit changes in crds
+        if: ${{ !env.ACT }}
+        run: |
+          if ! git diff --exit-code templates/*-crd.yaml > /dev/null; then 
+            git add templates/*-crd.yaml
+            git config --global user.name 'Mr. Robot'
+            git config --global user.email 'robot@users.noreply.github.com'
+            git commit -m "Automated crds update after helm chart update"
+            git push
+          fi
+      - name: Local commit report
+        if: ${{ env.ACT }}
+        run: |
+          git status
