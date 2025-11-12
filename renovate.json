@@ -4,6 +4,34 @@
     "config:recommended",
     ":dependencyDashboard"
   ],
+  "packageRules": [
+    {
+      "automerge": true,
+      "automergeStrategy": "squash",
+      "matchPackageNames": [
+        "*"
+      ],
+      "matchUpdateTypes": [
+        "patch"
+      ]
+    },
+    {
+      "automerge": true,
+      "automergeStrategy": "squash",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchPackageNames": [
+        "*"
+      ],
+      "matchUpdateTypes": [
+        "digest",
+        "major",
+        "minor",
+        "patch"
+      ]
+    }
+  ],
   "postUpdateOptions": [
     "helmUpdateSubChartArchives"
   ]
