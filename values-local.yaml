@@ -3,7 +3,7 @@ strimzi-kafka-operator:
   resources:
     limits:
       cpu: 0m
-      memory: 320Mi
+      memory: 480Mi
     requests:
       cpu: 0m
       memory: 0Mi
