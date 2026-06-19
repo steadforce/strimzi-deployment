@@ -12,4 +12,4 @@ permissions:
 
 jobs:
   trufflehog:
-    uses: steadforce/steadops-workflows/.github/workflows/trufflehog-oss.yaml@main
+    uses: steadforce/steadops-workflows/.github/workflows/trufflehog-oss.yaml@v3.0.0
