@@ -25,7 +25,7 @@ spec:
   conversion:
     strategy: None
   versions:
-    - name: v1beta2
+    - name: v1
       served: true
       storage: true
       subresources:
@@ -74,7 +74,7 @@ spec:
                       description: The storage class to use for dynamic volume allocation.
                     deleteClaim:
                       type: boolean
-                      description: Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
+                      description: Specifies whether the persistent volume claim is deleted when a Kafka node is deleted. Optional. Defaults to `false`.
                     id:
                       type: integer
                       minimum: 0
@@ -84,18 +84,6 @@ spec:
                       enum:
                         - shared
                       description: "Specifies whether this volume should be used for storing KRaft metadata. This property is optional. When set, the only currently supported value is `shared`. At most one volume can have this property set."
-                    overrides:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          class:
-                            type: string
-                            description: The storage class to use for dynamic volume allocation for this broker.
-                          broker:
-                            type: integer
-                            description: Id of the kafka broker (broker identifier).
-                      description: "As of Strimzi 0.46.0, the storage overrides for individual brokers are not supported anymore and this option is ignored."
                     selector:
                       additionalProperties:
                         type: string
@@ -115,6 +103,9 @@ spec:
                         - persistent-claim
                         - jbod
                       description: "Storage type, must be either 'ephemeral', 'persistent-claim', or 'jbod'."
+                    volumeAttributesClass:
+                      type: string
+                      description: Specifies `VolumeAttributeClass` name for dynamically configuring storage attributes.
                     volumes:
                       type: array
                       items:
@@ -125,7 +116,7 @@ spec:
                             description: The storage class to use for dynamic volume allocation.
                           deleteClaim:
                             type: boolean
-                            description: Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
+                            description: Specifies whether the persistent volume claim is deleted when a Kafka node is deleted. Optional. Defaults to `false`.
                           id:
                             type: integer
                             minimum: 0
@@ -135,18 +126,6 @@ spec:
                             enum:
                               - shared
                             description: "Specifies whether this volume should be used for storing KRaft metadata. This property is optional. When set, the only currently supported value is `shared`. At most one volume can have this property set."
-                          overrides:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                class:
-                                  type: string
-                                  description: The storage class to use for dynamic volume allocation for this broker.
-                                broker:
-                                  type: integer
-                                  description: Id of the kafka broker (broker identifier).
-                            description: "As of Strimzi 0.46.0, the storage overrides for individual brokers are not supported anymore and this option is ignored."
                           selector:
                             additionalProperties:
                               type: string
@@ -165,6 +144,9 @@ spec:
                               - ephemeral
                               - persistent-claim
                             description: "Storage type, must be either 'ephemeral' or 'persistent-claim'."
+                          volumeAttributesClass:
+                            type: string
+                            description: Specifies `VolumeAttributeClass` name for dynamically configuring storage attributes.
                         required:
                           - type
                       description: List of volumes as Storage objects representing the JBOD disks array.
@@ -826,7 +808,7 @@ spec:
                                     type: boolean
                                   secretName:
                                     type: string
-                                description: Secret to use populate the volume.
+                                description: '`Secret` to use to populate the volume.'
                               configMap:
                                 type: object
                                 properties:
@@ -847,20 +829,20 @@ spec:
                                     type: string
                                   optional:
                                     type: boolean
-                                description: ConfigMap to use to populate the volume.
+                                description: '`ConfigMap` to use to populate the volume.'
                               emptyDir:
                                 type: object
                                 properties:
                                   medium:
                                     type: string
+                                    enum:
+                                      - Memory
+                                    description: "Medium represents the type of storage medium should back this volume. Valid values are unset or `Memory`. When not set, it will use the node's default medium."
                                   sizeLimit:
-                                    type: object
-                                    properties:
-                                      amount:
-                                        type: string
-                                      format:
-                                        type: string
-                                description: EmptyDir to use to populate the volume.
+                                    type: string
+                                    pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                                    description: The total amount of local storage required for this EmptyDir volume (for example 1Gi).
+                                description: '`EmptyDir` to use to populate the volume.'
                               persistentVolumeClaim:
                                 type: object
                                 properties:
@@ -868,7 +850,7 @@ spec:
                                     type: string
                                   readOnly:
                                     type: boolean
-                                description: PersistentVolumeClaim object to use to populate the volume.
+                                description: '`PersistentVolumeClaim` object to use to populate the volume.'
                               csi:
                                 type: object
                                 properties:
@@ -887,7 +869,15 @@ spec:
                                     additionalProperties:
                                       type: string
                                     type: object
-                                description: CSIVolumeSource object to use to populate the volume.
+                                description: '`CSIVolumeSource` object to use to populate the volume.'
+                              image:
+                                type: object
+                                properties:
+                                  pullPolicy:
+                                    type: string
+                                  reference:
+                                    type: string
+                                description: '`ImageVolumeSource` object to use to populate the volume.'
                             oneOf:
                               - properties:
                                   secret: {}
@@ -895,7 +885,11 @@ spec:
                                   emptyDir: {}
                                   persistentVolumeClaim: {}
                                   csi: {}
+                                  image: {}
                           description: Additional volumes that can be mounted to the pod.
+                        hostUsers:
+                          type: boolean
+                          description: "Use the host user namespace. Optional. Defaults to `true`. When `true` or not set, the pod runs in the host user namespace. This is required when the pod needs features available only in the host namespace, such as loading kernel modules with `CAP_SYS_MODULE`.When set to `false`, the pod runs in a new user namespace. Setting `false` helps mitigate container breakout vulnerabilities and allows containers to run as `root` without granting `root` privileges on the host. This property is alpha-level in Kubernetes and is supported only by Kubernetes clusters that enable the `UserNamespacesSupport` feature."
                       description: Template for Kafka `Pods`.
                     perPodService:
                       type: object
@@ -1311,3 +1305,5 @@ spec:
                   type: string
                   description: Label selector for pods providing this resource.
               description: The status of the KafkaNodePool.
+          required:
+            - spec
