@@ -32,8 +32,8 @@ require_mikefarah_yq_v4() {
   fi
 }
 
-require_cmd helm "Install with: sudo snap install helm --classic"
-require_cmd yq "Install with: sudo snap install yq"
+require_cmd helm "Install with: sudo snap install helm --classic or run script from inside the workbench"
+require_cmd yq "Install with: sudo snap install yq or run script from inside the workbench"
 require_mikefarah_yq_v4
 
 cd "$DIR"
