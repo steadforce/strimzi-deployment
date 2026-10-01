@@ -1,4 +1,4 @@
-suite: test if the resource settings for strimzi container are correct
+suite: strimzi-operator container resources per stage
 templates:
 - charts/strimzi-kafka-operator/templates/060-Deployment-strimzi-cluster-operator.yaml
 tests:

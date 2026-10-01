@@ -1,4 +1,4 @@
-suite: test if the schedule pod kills policy is generated correctly
+suite: strimzi-operator chaos-mesh pod kill Schedule
 templates:
 - templates/schedule-pod-kills.yaml
 values:

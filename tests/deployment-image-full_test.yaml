@@ -1,4 +1,4 @@
-suite: test if the strimzi-operator image used in full clusters is correct
+suite: strimzi-operator deployment image per stage
 templates:
 - charts/strimzi-kafka-operator/templates/060-Deployment-strimzi-cluster-operator.yaml
 tests:
