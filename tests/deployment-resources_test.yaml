@@ -2,7 +2,7 @@ suite: test if the resource settings for strimzi container are correct
 templates:
 - charts/strimzi-kafka-operator/templates/060-Deployment-strimzi-cluster-operator.yaml
 tests:
-- it: strimzi-operator container resources for local full cluster
+- it: sets zero cpu and memory requests, zero cpu limit and a memory limit on the local cluster
   values:
   - ../values-subchart-overrides.yaml
   - ../values-local.yaml
@@ -25,7 +25,7 @@ tests:
       pattern: "^0.*"
   - matchSnapshot: {}
 
-- it: strimzi-operator container resources for full cluster
+- it: sets non-zero requests and limits with an overridden memory limit on non-local clusters
   values:
   - ../values-subchart-overrides.yaml
   asserts:

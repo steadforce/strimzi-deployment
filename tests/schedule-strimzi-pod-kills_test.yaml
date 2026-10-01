@@ -4,7 +4,7 @@ templates:
 values:
 - ../values-subchart-overrides.yaml
 tests:
-- it: pod kill schedule is generated for strimzi operator when api is available
+- it: renders the strimzi-operator pod kill schedule when the chaos-mesh api is available
   asserts:
   - containsDocument:
       apiVersion: chaos-mesh.org/v1alpha1
@@ -14,7 +14,7 @@ tests:
   capabilities:
     apiVersions:
     - chaos-mesh.org/v1alpha1/Schedule
-- it: pod kill schedule is not generated for strimzi operator when api is unavailable
+- it: omits the strimzi-operator pod kill schedule when the chaos-mesh api is unavailable
   asserts:
   - containsDocument:
       apiVersion: chaos-mesh.org/v1alpha1
