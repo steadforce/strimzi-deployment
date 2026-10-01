@@ -1,13 +1,53 @@
-suite: confirm that important overrides of default values are still there
+suite: strimzi-operator deployment overrides per stage
 
 templates:
 - charts/strimzi-kafka-operator/templates/060-Deployment-strimzi-cluster-operator.yaml
 tests:
-- it: strimzi-operator replicas on non-local cluster
+- it: uses three replicas on non-local clusters
   values:
-  - ../values-subchart-overrides.yaml
+  - &subchartOverridesValuesFile ../values-subchart-overrides.yaml
   asserts:
     - equal:
         path: spec.replicas
         value: 3
     - matchSnapshot: {}
+
+- it: uses a single replica on the local cluster
+  values:
+  - *subchartOverridesValuesFile
+  - &localValuesFile ../values-local.yaml
+  asserts:
+    - equal:
+        path: spec.replicas
+        value: 1
+
+- it: sets STRIMZI_NAMESPACE to watch any namespace on non-local clusters
+  values:
+  - *subchartOverridesValuesFile
+  asserts:
+    - &watchAnyNamespaceEnvAssert
+      equal:
+        path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].env[?(@.name == "STRIMZI_NAMESPACE")].value
+        value: "*"
+    - notExists:
+        path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].env[?(@.name == "STRIMZI_NAMESPACE")].valueFrom
+
+- it: keeps watching any namespace on the local cluster
+  values:
+  - *subchartOverridesValuesFile
+  - *localValuesFile
+  asserts:
+    - *watchAnyNamespaceEnvAssert
+
+- it: uses the overridden memory limit and requests on non-local clusters
+  values:
+  - *subchartOverridesValuesFile
+  asserts:
+    - equal:
+        path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.limits.memory
+        value: 1024Mi
+    - equal:
+        path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.requests
+        value:
+          cpu: 120m
+          memory: 640Mi
