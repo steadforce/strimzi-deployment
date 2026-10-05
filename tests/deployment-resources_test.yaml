@@ -8,21 +8,21 @@ tests:
   - ../values-local.yaml
   asserts:
   - matchRegex:
-      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.limits.cpu
+      path: &operatorLimitsCpuPath spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.limits.cpu
       # on local cluster we expect 0 or 0m cpu limits
-      pattern: "^0.*"
+      pattern: &zeroQuantityPattern "^0.*"
   - matchRegex:
-      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.limits.memory
+      path: &operatorLimitsMemoryPath spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.limits.memory
       # on local cluster we expect non 0 memory limits
-      pattern: "^[1-9].*"
+      pattern: &nonZeroQuantityPattern "^[1-9].*"
   - matchRegex:
-      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.requests.cpu
+      path: &operatorRequestsCpuPath spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.requests.cpu
       # on local cluster we expect 0 or 0m cpu requests
-      pattern: "^0.*"
+      pattern: *zeroQuantityPattern
   - matchRegex:
-      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.requests.memory
+      path: &operatorRequestsMemoryPath spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.requests.memory
       # on local cluster we expect 0 or 0Mi 0Gi memory requests
-      pattern: "^0.*"
+      pattern: *zeroQuantityPattern
   - matchSnapshot: {}
 
 - it: sets non-zero requests and limits with an overridden memory limit on non-local clusters
@@ -30,23 +30,23 @@ tests:
   - ../values-subchart-overrides.yaml
   asserts:
   - matchRegex:
-      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.limits.cpu
+      path: *operatorLimitsCpuPath
       # on non-local cluster we expect non 0 cpu limits
-      pattern: "^[1-9].*"
+      pattern: *nonZeroQuantityPattern
   - matchRegex:
-      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.limits.memory
+      path: *operatorLimitsMemoryPath
       # on non-local cluster we expect non 0 memory limits
-      pattern: "^[1-9].*"
+      pattern: *nonZeroQuantityPattern
   - notEqual:
-      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.limits.memory
+      path: *operatorLimitsMemoryPath
       # expect that the memory limit value from the subchart has been overridden
       value: "384Mi"
   - matchRegex:
-      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.requests.cpu
+      path: *operatorRequestsCpuPath
       # on non-local cluster we expect non 0 cpu requests
-      pattern: "^[1-9].*"
+      pattern: *nonZeroQuantityPattern
   - matchRegex:
-      path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.requests.memory
+      path: *operatorRequestsMemoryPath
       # on non-local cluster we expect non 0 memory requests
-      pattern: "^[1-9].*"
+      pattern: *nonZeroQuantityPattern
   - matchSnapshot: {}

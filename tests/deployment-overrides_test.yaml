@@ -5,7 +5,7 @@ templates:
 tests:
 - it: uses three replicas on non-local clusters
   values:
-  - &subchartOverridesValuesFile ../values-subchart-overrides.yaml
+  - &subchartOverrideValuesFile ../values-subchart-overrides.yaml
   asserts:
     - equal:
         path: spec.replicas
@@ -14,7 +14,7 @@ tests:
 
 - it: uses a single replica on the local cluster
   values:
-  - *subchartOverridesValuesFile
+  - *subchartOverrideValuesFile
   - &localValuesFile ../values-local.yaml
   asserts:
     - equal:
@@ -23,7 +23,7 @@ tests:
 
 - it: sets STRIMZI_NAMESPACE to watch any namespace on non-local clusters
   values:
-  - *subchartOverridesValuesFile
+  - *subchartOverrideValuesFile
   asserts:
     - &watchAnyNamespaceEnvAssert
       equal:
@@ -34,14 +34,14 @@ tests:
 
 - it: keeps watching any namespace on the local cluster
   values:
-  - *subchartOverridesValuesFile
+  - *subchartOverrideValuesFile
   - *localValuesFile
   asserts:
     - *watchAnyNamespaceEnvAssert
 
 - it: uses the overridden memory limit and requests on non-local clusters
   values:
-  - *subchartOverridesValuesFile
+  - *subchartOverrideValuesFile
   asserts:
     - equal:
         path: spec.template.spec.containers[?(@.name == "strimzi-cluster-operator")].resources.limits.memory
