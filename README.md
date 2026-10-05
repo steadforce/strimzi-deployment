@@ -9,6 +9,9 @@ Umbrella Helm chart that packages and configures the [Strimzi](https://strimzi.i
 
 - Deploys the `strimzi-kafka-operator` chart, pinned in `Chart.yaml` and `Chart.lock`, and committed as an archive
   in `charts/`.
+- Configures the operator in `values-subchart-overrides.yaml` for all clusters: three replicas, a CPU request,
+  memory requests and limits, and `watchAnyNamespace: true`. `values-local.yaml` reduces this for the local
+  cluster to a single replica with zero CPU settings, a zero memory request, and a lower memory limit.
 - Ships the Strimzi CRDs as templates, annotated for server-side apply, see
   [Argo CD Sync Mitigation](#argo-cd-sync-mitigation).
 - Renders a `Namespace` for the release namespace.
@@ -19,21 +22,53 @@ Umbrella Helm chart that packages and configures the [Strimzi](https://strimzi.i
 
 Commands below run in the `SteadOps-Steadies-K8s-Workplace` workbench, which ships `helm`, `yq`, `kubectl`,
 `hetzner-k3s`, and `act`. Rendering, testing, and the CRD update also have a containerized alternative that only
-needs Docker.
+needs Docker. All commands run from the repository root.
 
 ## Repository Layout
 
 | File / Directory | Purpose |
 | --- | --- |
 | `Chart.yaml` | Declares the `strimzi-kafka-operator` chart dependency of this umbrella chart. |
-| `Chart.lock` | Pins the resolved dependency version. |
+| `Chart.lock` | Committed lock file that pins the resolved dependency version. |
 | `charts/` | The committed `strimzi-kafka-operator` chart archive, so no dependency setup is needed after cloning. |
 | `values-subchart-overrides.yaml` | Overrides for the `strimzi-kafka-operator` chart, see [Testing](#testing). |
-| `values-local.yaml` | Single replica and zero CPU settings for the local cluster. |
+| `values-local.yaml` | Single replica and reduced resources for the local cluster. |
 | `templates/` | The namespace, the Chaos Mesh schedule, and the generated `*-crd.yaml` CRDs. |
 | `update-crds.sh` | Regenerates the CRD templates from the dependency. |
-| `tests/` | Helm unittest suites for the operator deployment and the Chaos Mesh schedule. |
+| `tests/` | Helm unittest suites; `tests/__snapshot__/` is gitignored. |
+| `.github/workflows/` | Unittest, CRD update, and Trufflehog workflows, see [CI/CD](#cicd). |
 | `renovate.json` | Renovate configuration. |
+
+## Setup
+
+`charts/` already contains the committed `strimzi-kafka-operator` archive. To restore it to the version pinned by
+`Chart.lock`, for example after a pull that changes `Chart.lock`, run `helm dependency build`. The command first
+registers the HTTP(S) repositories declared in `Chart.yaml`, as the pipeline does.
+
+In the workbench:
+
+```sh
+ yq 'explode(.) | .dependencies[] | select(.repository == "http*") | .name + " " + .repository' Chart.yaml |
+   while read -r name repo; do helm repo add --force-update "$name" "$repo"; done
+ helm dependency build .
+```
+
+Without the workbench:
+
+```sh
+ docker run \
+   -e HOME=/tmp \
+   --entrypoint sh \
+   --rm \
+   -u $(id -u) \
+   -v "$(pwd):/apps" \
+   -w /apps \
+   alpine/helm -c '
+     yq "explode(.) | .dependencies[] | select(.repository == \"http*\") | .name + \" \" + .repository" Chart.yaml |
+       while read -r name repo; do helm repo add --force-update "$name" "$repo"; done &&
+     helm dependency build .
+   '
+```
 
 ## Argo CD Sync Mitigation
 
@@ -130,7 +165,7 @@ incompatible changes in values of the subcharts. This is necessary because Helm 
 usage of `values.yaml`. Now it's possible to test if we use the same registry and repository for images as the
 subcharts are using.
 
-Run the Helm unittest suites:
+Run the Helm unittest suites, including the tests of the subcharts in `charts/` (the default):
 
 ```sh
  docker run \
@@ -145,7 +180,23 @@ Run the Helm unittest suites:
 
 > [!TIP]
 > Add `-t JUnit -o test-output.xml` after `helmunittest/helm-unittest` to also write a JUnit report, as the pipeline
-> does. Without `-t`, helm-unittest writes the report in XUnit format.
+> does. Without `-t`, helm-unittest writes the report in XUnit format. `test-output.xml` is gitignored.
+
+In the workbench, run `helm unittest .`. The workbench image does not ship the helm-unittest plugin; the command
+works only because the workbench mounts `$HOME`, so a plugin installed in the Helm home of the host is available.
+Install it once (Helm 4 needs `--verify=false` for this unsigned plugin, as the pipeline does):
+
+```sh
+ helm plugin install --verify=false https://github.com/helm-unittest/helm-unittest.git
+ helm unittest .
+```
+
+The suites cover:
+
+- The operator image, replicas, resources, and `STRIMZI_NAMESPACE` of the deployment on the local and the
+  non-local clusters, and the selector labels that the Chaos Mesh schedule relies on.
+- The `ClusterRoleBinding`s that `watchAnyNamespace` turns on.
+- The Chaos Mesh pod kill `Schedule`, rendered only when its API is available.
 
 ## Install Strimzi in the SteadOps Workplace
 
