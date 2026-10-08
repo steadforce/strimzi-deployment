@@ -1,0 +1,62 @@
+suite: strimzi-operator rbac bindings for watching any namespace
+
+templates:
+- &clusterOperatorBindingTemplate charts/strimzi-kafka-operator/templates/020-RoleBinding-strimzi-cluster-operator.yaml
+- &watchedBindingTemplate charts/strimzi-kafka-operator/templates/023-RoleBinding-strimzi-cluster-operator.yaml
+- &entityOperatorBindingTemplate charts/strimzi-kafka-operator/templates/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml
+values:
+- ../values-subchart-overrides.yaml
+release:
+  namespace: strimzi
+tests:
+- it: renders the namespaced cluster operator binding as a ClusterRoleBinding
+  template: *clusterOperatorBindingTemplate
+  asserts:
+    - hasDocuments:
+        count: 1
+    - isKind:
+        of: ClusterRoleBinding
+    - equal:
+        path: metadata.name
+        value: strimzi-cluster-operator-namespaced
+    - notExists:
+        path: metadata.namespace
+    - equal:
+        path: subjects[?(@.kind == "ServiceAccount")].namespace
+        value: strimzi
+
+- it: renders the watched binding as a ClusterRoleBinding
+  template: *watchedBindingTemplate
+  asserts:
+    - hasDocuments:
+        count: 1
+    - isKind:
+        of: ClusterRoleBinding
+    - equal:
+        path: metadata.name
+        value: strimzi-cluster-operator-watched
+    - notExists:
+        path: metadata.namespace
+
+- it: renders the entity operator delegation binding as a ClusterRoleBinding
+  template: *entityOperatorBindingTemplate
+  asserts:
+    - hasDocuments:
+        count: 1
+    - isKind:
+        of: ClusterRoleBinding
+    - equal:
+        path: metadata.name
+        value: strimzi-cluster-operator-entity-operator-delegation
+    - notExists:
+        path: metadata.namespace
+
+- it: renders the cluster operator bindings as ClusterRoleBindings on the local cluster
+  values:
+  - ../values-subchart-overrides.yaml
+  - ../values-local.yaml
+  asserts:
+    - isKind:
+        of: ClusterRoleBinding
+    - notExists:
+        path: metadata.namespace

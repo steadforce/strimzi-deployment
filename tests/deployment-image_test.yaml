@@ -1,9 +1,9 @@
-suite: test if the strimzi-operator image used in full clusters is correct
+suite: strimzi-operator deployment image per stage
 templates:
 - charts/strimzi-kafka-operator/templates/060-Deployment-strimzi-cluster-operator.yaml
 tests:
 
-- it: strimzi-operator image for local full cluster
+- it: uses the quay.io strimzi-operator image on the local cluster
   values:
   - ../values-subchart-overrides.yaml
   - ../values-local.yaml
@@ -13,7 +13,7 @@ tests:
       pattern: "^quay.io/strimzi/operator:"
   - matchSnapshot: {}
 
-- it: strimzi-operator image for full cluster
+- it: uses the quay.io strimzi-operator image on non-local clusters
   values:
     - ../values-subchart-overrides.yaml
   asserts:
