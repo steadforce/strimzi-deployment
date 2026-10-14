@@ -1,8 +1,9 @@
-suite: test if the deployment still uses the same selector labels, we use them in the chaos-mesh schedule
+# we use these labels in the chaos-mesh pod kill schedule
+suite: strimzi-operator deployment selector labels
 templates:
 - charts/strimzi-kafka-operator/templates/060-Deployment-strimzi-cluster-operator.yaml
 tests:
-- it: deployment still uses the same selector labels
+- it: keeps the selector labels the chaos-mesh pod kill schedule relies on
   values:
   - ../values-subchart-overrides.yaml
   asserts:
